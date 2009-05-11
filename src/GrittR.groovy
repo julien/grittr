@@ -16,39 +16,6 @@ class GrittR {
 	twitter "wrapper" methods 
 	**************************************************************************/
 	
-	/** not working right now
-	static void getCurrentTrends() {
-		def statusList;
-		try {
-			statusList = twitter.getCurrentTrends();
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n" + 
-					"${it.getText()} \n"; 
-			}
-		}
-		catch(Exception ex) {
-			println "Unable to get current trends ...sorry";
-		}
-		finally { System.exit(0); }
-	}
-	
-	static void getDailyTrends() {
-		def statusList;
-		try {
-			statusList = twitter.getDailyTrends();
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n" + 
-					"${it.getText()} \n"; 
-			}
-		}
-		catch(Exception ex) {
-			println "Unable to get daily trends ...sorry";
-		}
-		finally { System.exit(0); }
-	}
-	*/
 	
 	static void getDirectMessages() {
 		def messagesList;
@@ -87,10 +54,7 @@ class GrittR {
 		try {
 			statusList = twitter.getFavorites();
 			println "Favorite tweets \n";
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n${it.getText()} \n";
-			}		
+			displayStatusMessage(statusList);		
 		} 
 		catch(Exception ex) {
 			println "Unable to get your favorite tweets ...sorry";
@@ -117,11 +81,9 @@ class GrittR {
 		def statusList;
 		try {
 			statusList = twitter.getFriendsTimeline();
-			println "Friends messages \n";
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n${it.getText()} \n";
-			}
+			println "Friends timeline \n";
+			displayStatusMessage(statusList);
+			
 		}
 		catch(Exception ex) {
 			println "Unable to list your friend's timeline ... sorry";
@@ -134,10 +96,7 @@ class GrittR {
 		try {
 			statusList = twitter.getMentions();
 			println "@${twitter.getUserId()} \n";
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n${it.getText()} \n";
-			}
+			displayStatusMessage(statusList);
 		}
 		catch(Exception ex) {
 			println "Unable to list your mentions timeline ... sorry";
@@ -150,10 +109,7 @@ class GrittR {
 		try {
 			println "Your timeline \n";
 			statusList = twitter.getUserTimeline(twitter.getUserId(), new Date());
-			statusList.each  {
-				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getUser().getScreenName() } \n${it.getText()} \n"; 
-			}
+			displayStatusMessage(statusList);
 		}
 		catch(Exception ex) {
 			println "Unable to list your user timeline ... sorry";
@@ -161,13 +117,15 @@ class GrittR {
 		finally { System.exit(0); }
 	}
 	
-	static void updateStatus(String newStatus) {
-		// make sure we don't send more than 140 chars
-		newStatus = newStatus.substring(0, 139);
+	static void updateStatus(String newStatus) {		
+		if(newStatus.length() >= 139) 		
+			newStatus = newStatus.substring(0, 139);
+
 		def status;
 		try {
 			status = twitter.updateStatus(newStatus);
-			println "Successfully updated your status to : ${status.getText()}";
+			println "Successfully updated your status to : ${status.getText()}" + 
+				"- [ID: ${status.getId()}";
 		}
 		catch(Exception ex) {
 			println "Unable to update your status... sorry";
@@ -176,6 +134,16 @@ class GrittR {
 	}
 	
 	/**************************************************************************/	
+	
+	static void displayStatusMessage(List<Status> statusList) { 
+    	statusList.each {
+    		println "${GrittR.humanDate(it.getCreatedAt())} " + 
+					"${it.getUser().getScreenName()} [ID: ${it.getId()}]" + 
+					"\n${it.getText()}\n";
+    	}    	
+    }
+	
+	
 	static String helpString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("\n");
@@ -226,18 +194,8 @@ class GrittR {
         argumentString = arguments.join(" ");
         
         // println "method : ${method}, args : ${argumentString}";  
+        
         switch(method) {
-        	
-        	/*
-        	case "current":
-        		getCurrentTrends();
-        		break;
-        	
-        	case "daily":
-        		getDailyTrends();
-        		break;
-        	*/
-        	
         	case "direct":
         		getDirectMessages();
         		break;
@@ -269,8 +227,16 @@ class GrittR {
         	case "user":
         		getUserTimeline();
         		break;
+        		
+        	default:
+        		println GrittR.helpString();
+        		break;
         }
     }
+    
+    /**************************************************************************/
+    
+
 }
 
 
