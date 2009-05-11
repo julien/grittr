@@ -1,4 +1,3 @@
-#!/opt/groovy/bin/groovy
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
