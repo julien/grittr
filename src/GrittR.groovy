@@ -6,7 +6,7 @@ import twitter4j.Paging;
 import twitter4j.Twitter;
 import twitter4j.Status;
 
-class GrittR {
+public class GrittR {
 
 	public static String VERSION = "GrittR v0.1a";
 	
