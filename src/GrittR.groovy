@@ -2,14 +2,13 @@ import twitter4j.Paging;
 import twitter4j.Twitter;
 
 class GrittR {
-
-	static twitter;
-	static usr;
 	
-	static void update(String s) {
-		static status;
+	private static twitter;
+	
+	static void update(newStatus) {
+		def status;
 		try {
-			status = twitter.updateStatus(s);
+			status = twitter.updateStatus(newStatus);
 			println "Successfully updated your status to : ${status.getText()}";
 		}
 		catch(Exception ex) {
@@ -19,7 +18,7 @@ class GrittR {
 	}
 	
 	static void getFriendsTimeline() {
-		static statusList;
+		def statusList;
 		try {
 			statusList = twitter.getFriendsTimeline();
 			statusList.each  {
@@ -34,7 +33,7 @@ class GrittR {
 	}
 	
 	static void getFollowers() {
-		static userList;
+		def userList;
 		try {
 			userList = twitter.getFollowers(new Paging(20));
 			userList.each  {
@@ -55,9 +54,7 @@ class GrittR {
         	System.exit(0);
         }
         
-        static username, password, method;
-		static arguments;
-		static argumentString;
+        def username, password, method, arguments, argumentString;
         
         username = args[0];
         password = args[1];
@@ -81,7 +78,6 @@ class GrittR {
         arguments = new String[args.length - 3];
         System.arraycopy(args, 3, arguments, 0, args.length - 3);
         argumentString = arguments.join(" ");
-        
         // println "method : ${method}, args : ${argumentString}";
         
         switch(method) {
