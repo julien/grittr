@@ -1,9 +1,24 @@
+import java.text.*;
 import twitter4j.Paging;
 import twitter4j.Twitter;
 
+
 class GrittR {
 	
-	private static twitter;
+	private static Twitter twitter;
+	
+	static String humanDate(date) {
+		return new SimpleDateFormat("yy/MM/dd").format(date);
+	}
+	
+	static String helpString() {
+		String s = "At least 3 arguments must be specified "  + 
+        	   	": username password method [(opt) arguments]" + 
+        	   	"\n Example  usage : \n" +  
+        	   	"groovy GrittR username password update 'your new status'" + 
+        	   	"\n" + "groovy GrittR username password friends" + "\n";
+       return s;
+	}
 	
 	static void update(newStatus) {
 		
@@ -14,7 +29,7 @@ class GrittR {
 			status = twitter.updateStatus(newStatus);
 			println "Successfully updated your status to : ${status.getText()}";
 		}
-		catch(ex) {
+		catch(Exception ex) {
 			println "Unable to update your status... sorry";
 		}
 		finally { System.exit(0); }
@@ -25,11 +40,11 @@ class GrittR {
 		try {
 			statusList = twitter.getFriendsTimeline();
 			statusList.each  {
-				println "${ it.getCreatedAt() } - ${ it.getUser().getScreenName() } : ${ it.getText() }";
-				println " ";
+				println "${GrittR.humanDate(it.getCreatedAt())} " + 
+					"${ it.getUser().getScreenName() } \n${it.getText()} \n";
 			}
 		}
-		catch(ex) {
+		catch(Exception ex) {
 			println "Unable to list your friend's timeline ... sorry";
 		}
 		finally { System.exit(0); }
@@ -44,7 +59,7 @@ class GrittR {
 				println " ";
 			}
 		} 
-		catch(ex) {
+		catch(Exception ex) {
 			println "Unable to list your followers ... sorry";
 		}
 		finally { System.exit(0); }
@@ -53,7 +68,7 @@ class GrittR {
     static main(String[] args) {
         
         if(args.length < 3) {
-        	println "At least 3 arguments must be specified : username password method [(opt) arguments]";
+        	println GrittR.helpString();
         	System.exit(0);
         }
         
@@ -71,7 +86,7 @@ class GrittR {
         try {
         	twitter.verifyCredentials();
         } 
-        catch(ex) {
+        catch(Exception ex) {
         	println "Failed to log in to twitter, check your credentials";
         	System.exit(0);
         }
@@ -98,6 +113,11 @@ class GrittR {
         }
     }
 }
+
+
+
+
+
 
 
 
