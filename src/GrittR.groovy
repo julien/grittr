@@ -1,3 +1,5 @@
+#!/opt/groovy/bin/groovy
+
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -5,6 +7,8 @@ import java.util.List;
 import twitter4j.Paging;
 import twitter4j.Twitter;
 import twitter4j.Status;
+import twitter4j.http.AccessToken;
+
 
 public class GrittR {
 
@@ -133,6 +137,38 @@ public class GrittR {
 		finally { System.exit(0); }
 	}
 	
+	static AccessToken getOAuthAccessToken() {
+		try {
+			twitter.getOAuthAccessToken("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E");
+			println "Authorized...";	
+		} catch(Exception ex) {
+			println "Unable to get oAuth request token ... sorry";
+		}
+		finally { System.exit(0); }
+	}
+	
+	
+	static void setOAuthAccessToken(String token, String tokenSecret) {
+		twitter.setOAuthAccessToken(new AccessToken(token, tokenSecret));
+		
+		getOAuthAccessToken(token, tokenSecret);
+		
+		/*
+	 *   Consumer key
+      JDy3FSsqzDpBYS9Xtvp1AA
+    	* Consumer secret
+      AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E
+    * Request token URL
+      http://twitter.com/oauth/request_token
+    * Access token URL
+      http://twitter.com/oauth/access_token
+    * Authorize URL
+      http://twitter.com/oauth/authorize *We support hmac-sha1 signatures. We do not support the plaintext signature method.
+
+		
+		*/
+	}
+
 	/**************************************************************************/	
 	
 	static void displayStatusMessage(List<Status> statusList) { 
@@ -179,7 +215,14 @@ public class GrittR {
         username = args[0];
         password = args[1];
         
+        
+        
         twitter = new Twitter(username, password);
+		twitter.setOAuthAccessToken("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
+		twitter.setSource("GrittR");  
+		twitter.setUserAgent("GrittR");
+        // getOAuthAccessToken();
+        
         try {
         	twitter.verifyCredentials();
         } 
@@ -196,6 +239,10 @@ public class GrittR {
         // println "method : ${method}, args : ${argumentString}";  
         
         switch(method) {
+        	/*case "authorize":
+        		setOAuthAccessToken(username, password);
+        		break;*/
+        
         	case "direct":
         		getDirectMessages();
         		break;
