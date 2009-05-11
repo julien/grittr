@@ -6,12 +6,15 @@ class GrittR {
 	private static twitter;
 	
 	static void update(newStatus) {
+		
+		newStatus = newStatus.substring(0, 139);
+		
 		def status;
 		try {
 			status = twitter.updateStatus(newStatus);
 			println "Successfully updated your status to : ${status.getText()}";
 		}
-		catch(Exception ex) {
+		catch(ex) {
 			println "Unable to update your status... sorry";
 		}
 		finally { System.exit(0); }
@@ -26,7 +29,7 @@ class GrittR {
 				println " ";
 			}
 		}
-		catch(Exception ex) {
+		catch(ex) {
 			println "Unable to list your friend's timeline ... sorry";
 		}
 		finally { System.exit(0); }
@@ -41,7 +44,7 @@ class GrittR {
 				println " ";
 			}
 		} 
-		catch(Exception ex) {
+		catch(ex) {
 			println "Unable to list your followers ... sorry";
 		}
 		finally { System.exit(0); }
@@ -68,7 +71,7 @@ class GrittR {
         try {
         	twitter.verifyCredentials();
         } 
-        catch(Exception ex) {
+        catch(ex) {
         	println "Failed to log in to twitter, check your credentials";
         	System.exit(0);
         }
