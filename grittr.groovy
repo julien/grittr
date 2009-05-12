@@ -7,18 +7,16 @@ import java.util.List;
 import SQLite.Database;
 import SQLite.Stmt;
 
-import twitter4j.Paging;
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.http.AccessToken;
-import twitter4j.http.RequestToken;
+import twitter4j.*;
+import twitter4j.http.*;
 
 public class GrittR {
 
 	public static String VERSION = "GrittR v0.1a";
 	
 	private static Twitter twitter;
+	private static ExtendedUser user;
+	private static AccessToken accessToken;
 	
 	/**************************************************************************
 	twitter "wrapper" methods 
@@ -141,20 +139,10 @@ public class GrittR {
 		finally { System.exit(0); }
 	}
 	
-	static AccessToken getOAuthAccessToken() {
-		try {
-			twitter.getOAuthAccessToken("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E");
-			println "Authorized...";	
-		} catch(Exception ex) {
-			println "Unable to get oAuth request token ... sorry";
-		}
-		finally { System.exit(0); }
-	}
+	/**************************************************************************/
 	
 	static void authorizeClient() {
-		
 		twitter.setOAuthConsumer("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
-		
     	RequestToken requestToken = twitter.getOAuthRequestToken();
     	AccessToken accessToken = null;
     	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -179,12 +167,18 @@ public class GrittR {
       		}
     	}
     	
-    	// persist to the accessToken for future reference.
-    	storeAccessToken(twitter.verifyCredentials().getId() , accessToken);
+    	AccessToken at = loadAccessToken(user.getId());
     	
-    	// Status status = twitter.updateStatus(args[0]);
-    	// System.out.println("Successfully updated the status to [" + status.getText() + "].");
-    	// System.exit(0);
+    	if(at == null) {
+    		// save accessToken for future reference.
+    		storeAccessToken(twitter.verifyCredentials().getId() , accessToken);
+    	}
+    	else {
+    		println "GrittR is authorized...";
+    		twitter.setOAuthAccessToken(at.getToken(), at.getTokenSecret());
+    		//
+    		twitter.getOAuthRequestToken(at.getToken(), at.getTokenSecret());
+    	}
   	}
   	
   	static void storeAccessToken(int userId, AccessToken at) {
@@ -231,7 +225,6 @@ public class GrittR {
     	catch(Exception ex) {
     		println "Unable to store access token ...sorry";
     	}
-
   	}
   	
   	static AccessToken loadAccessToken(int userId) {
@@ -251,18 +244,17 @@ public class GrittR {
 
     		try {
     			stmt = db.prepare(sb.toString());
-    			while(stmt.step()) { }
-
-    			stmt.column_count().times {
-    				if(stmt.column_origin_name(it).equalsIgnoreCase("token")) {
-    					println "${stmt.column_type(it)}"
-    				}
-    				
-    				/*
-    				if(stmt.column_origin_name(it).equalsIgnoreCase("tokenSecret")) 
-    					tokenSecret = stmt.column_string(it);
-    				*/
-    			}	
+    			while(stmt.step()) { 
+    				stmt.column_count().times {
+						if(stmt.column_origin_name(it).equalsIgnoreCase("token")) 
+							token = stmt.column_string(it);
+						
+						if(stmt.column_origin_name(it).equalsIgnoreCase("tokenSecret")) 
+							tokenSecret = stmt.column_string(it);
+						
+					}
+    			}
+    			accessToken = new AccessToken(token, tokenSecret);
     		}
     		catch(Exception ex) {
     			println "Error while retreiving your access token ...sorry";
@@ -272,6 +264,7 @@ public class GrittR {
     	catch(Exception ex) {
     		println "Unable to retreive access token ...sorry";
     	}
+    	return accessToken;
   	}
 
 	/**************************************************************************/	
@@ -307,27 +300,31 @@ public class GrittR {
 	}
 
 	/**************************************************************************/
-    static void main(String[] args) {  
-    
+    static void main(String[] args) {
+
         if(args.length < 3) {
         	println GrittR.helpString();
         	System.exit(0);
         }
         
-        def username, password, method, arguments, argumentString, user;
+        def username, password, method, arguments, argumentString;
         
         username = args[0];
         password = args[1];
         
         twitter = new Twitter(username, password);
-		twitter.setClientURL("GrittR");
+        twitter.setClientURL("http://github.com/julien/grittr/tree/master");
 		twitter.setClientVersion("1.0");
-		twitter.setSource("GrittR");  
 		twitter.setUserAgent("GrittR");
 
         try {
         	user = twitter.verifyCredentials();
-       		//println user.getId();
+        	accessToken = loadAccessToken(user.getId());
+        	if(accessToken != null) {
+        		twitter.setOAuthAccessToken(accessToken);
+        		twitter.setSource("GrittR");  	
+        	}
+        	
         } 
         catch(Exception ex) {
         	println "Failed to log in to twitter, check your credentials";
@@ -344,10 +341,6 @@ public class GrittR {
         switch(method) {
         	case "authorize":
         		authorizeClient();
-        		break;
-        		
-        	case "test":
-        		loadAccessToken(user.getId());
         		break;
         
         	case "direct":
