@@ -3,11 +3,16 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import twitter4j.Paging;
-import twitter4j.Twitter;
-import twitter4j.Status;
-import twitter4j.http.AccessToken;
 
+import SQLite.Database;
+import SQLite.Stmt;
+
+import twitter4j.Paging;
+import twitter4j.Status;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.http.AccessToken;
+import twitter4j.http.RequestToken;
 
 public class GrittR {
 
@@ -128,7 +133,7 @@ public class GrittR {
 		try {
 			status = twitter.updateStatus(newStatus);
 			println "Successfully updated your status to : ${status.getText()}" + 
-				"- [ID: ${status.getId()}";
+				"- [ID: ${status.getId()}]";
 		}
 		catch(Exception ex) {
 			println "Unable to update your status... sorry";
@@ -146,27 +151,128 @@ public class GrittR {
 		finally { System.exit(0); }
 	}
 	
-	
-	static void setOAuthAccessToken(String token, String tokenSecret) {
-		twitter.setOAuthAccessToken(new AccessToken(token, tokenSecret));
+	static void authorizeClient() {
 		
-		getOAuthAccessToken(token, tokenSecret);
+		twitter.setOAuthConsumer("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
 		
-		/*
-	 *   Consumer key
-      JDy3FSsqzDpBYS9Xtvp1AA
-    	* Consumer secret
-      AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E
-    * Request token URL
-      http://twitter.com/oauth/request_token
-    * Access token URL
-      http://twitter.com/oauth/access_token
-    * Authorize URL
-      http://twitter.com/oauth/authorize *We support hmac-sha1 signatures. We do not support the plaintext signature method.
+    	RequestToken requestToken = twitter.getOAuthRequestToken();
+    	AccessToken accessToken = null;
+    	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    	
+    	while (null == accessToken) {
+      		println "Open the following URL and grant access to your account:";
+      		println requestToken.getAuthorizationURL();
+     		println "Hit enter when it's done.[Enter]:";
+     		
+     		br.readLine();
+     		
+       		try {
+        		accessToken = requestToken.getAccessToken();
+      		} 
+      		catch (TwitterException te) {
+        		if( 401 == te.getStatusCode()) {
+          			println "Unable to get the access token.";
+       			}
+       			else {
+          			te.printStackTrace();
+        		}
+      		}
+    	}
+    	
+    	// persist to the accessToken for future reference.
+    	storeAccessToken(twitter.verifyCredentials().getId() , accessToken);
+    	
+    	// Status status = twitter.updateStatus(args[0]);
+    	// System.out.println("Successfully updated the status to [" + status.getText() + "].");
+    	// System.exit(0);
+  	}
+  	
+  	static void storeAccessToken(int userId, AccessToken at) {
+    	def db, sb, stmt;
+    	try {
+    		db = new Database();
+    		db.open("grittr.db", 0755);
+    		
+    		sb = new StringBuffer();
+    		sb.append("create table if not exists tokens (");
+    		sb.append("id integer primary key autoincrement, ");
+    		sb.append("userid varchar(255) not null, ");
+    		sb.append("token varchar(255) not null, ");
+    		sb.append("tokenSecret varchar(255) not null)");
+		
+    		try {
+    			stmt = db.prepare(sb.toString());
+				while(stmt.step()) { }
+			}
+			catch(Exception ex) {
+				println "Error creating tokens table ...sorry";
+			}
 
-		
-		*/
-	}
+			sb = new StringBuffer();
+			sb.append("insert into tokens values (");
+			sb.append("NULL, ");
+			sb.append("'" + userId.toString() + "'");
+			sb.append(", ");
+			sb.append("'" + at.getToken() + "'");
+			sb.append(", ");
+			sb.append("'" + at.getTokenSecret() + "'");
+			sb.append(")");
+			
+			println sb.toString();   
+			
+			try {
+    			stmt = db.prepare(sb.toString());
+				while(stmt.step()) { }
+			}
+			catch(Exception ex) {
+				println "Error storing your access token ...sorry";
+			}
+    	}
+    	catch(Exception ex) {
+    		println "Unable to store access token ...sorry";
+    	}
+
+  	}
+  	
+  	static AccessToken loadAccessToken(int userId) {
+
+    	def db, sb, stmt;
+    	AccessToken accessToken = null;
+    	String token, tokenSecret = null;
+    	
+    	try {
+    		db = new Database();
+    		db.open("grittr.db", 0755);
+    		
+    		sb = new StringBuffer();
+    		sb.append("select * from tokens where userid = ");
+    		sb.append("'" + userId.toString() + "'");
+    		
+
+    		try {
+    			stmt = db.prepare(sb.toString());
+    			while(stmt.step()) { }
+
+    			stmt.column_count().times {
+    				if(stmt.column_origin_name(it).equalsIgnoreCase("token")) {
+    					println "${stmt.column_type(it)}"
+    				}
+    				
+    				/*
+    				if(stmt.column_origin_name(it).equalsIgnoreCase("tokenSecret")) 
+    					tokenSecret = stmt.column_string(it);
+    				*/
+    			}	
+    		}
+    		catch(Exception ex) {
+    			println "Error while retreiving your access token ...sorry";
+    		}
+    		
+    	}
+    	catch(Exception ex) {
+    		println "Unable to retreive access token ...sorry";
+    	}
+  	}
 
 	/**************************************************************************/	
 	
@@ -177,8 +283,7 @@ public class GrittR {
 					"\n${it.getText()}\n";
     	}    	
     }
-	
-	
+		
 	static String helpString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("\n");
@@ -209,21 +314,20 @@ public class GrittR {
         	System.exit(0);
         }
         
-        def username, password, method, arguments, argumentString;
+        def username, password, method, arguments, argumentString, user;
         
         username = args[0];
         password = args[1];
         
-        
-        
         twitter = new Twitter(username, password);
-		twitter.setOAuthAccessToken("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
+		twitter.setClientURL("GrittR");
+		twitter.setClientVersion("1.0");
 		twitter.setSource("GrittR");  
 		twitter.setUserAgent("GrittR");
-        // getOAuthAccessToken();
-        
+
         try {
-        	twitter.verifyCredentials();
+        	user = twitter.verifyCredentials();
+       		//println user.getId();
         } 
         catch(Exception ex) {
         	println "Failed to log in to twitter, check your credentials";
@@ -238,9 +342,13 @@ public class GrittR {
         // println "method : ${method}, args : ${argumentString}";  
         
         switch(method) {
-        	/*case "authorize":
-        		setOAuthAccessToken(username, password);
-        		break;*/
+        	case "authorize":
+        		authorizeClient();
+        		break;
+        		
+        	case "test":
+        		loadAccessToken(user.getId());
+        		break;
         
         	case "direct":
         		getDirectMessages();
