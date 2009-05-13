@@ -10,39 +10,49 @@ import SQLite.Stmt;
 import twitter4j.*;
 import twitter4j.http.*;
 
+
 public class GrittR {
 
-	public static String VERSION = "GrittR v0.1a";
+	public static String VERSION = "GrittR 1.0";
 	
 	private static Twitter twitter;
 	private static ExtendedUser user;
 	private static AccessToken accessToken;
+	private static String method;
+	private static String[] arguments;
+	private static String argStr;
+	
 	
 	/**************************************************************************
 	twitter "wrapper" methods 
 	**************************************************************************/
-	
-	
-	static void getDirectMessages() {
+
+	public static void getDirectMessages() {
 		def messagesList;
 		try {
 			messagesList = twitter.getDirectMessages();
-			println "Direct messages \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\nDirect messages \n" + 
+				AinsiColors.NORMAL;
 			messagesList.each  {
 				println "${GrittR.humanDate(it.getCreatedAt())} " + 
 					"${ it.getSender().getScreenName() } \n${it.getText()} \n";
 			}		
 		} 
 		catch(Exception ex) {
-			println "Unable to get your direct messages ...sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to get your direct messages ...sorry" + 
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static void getSentDirectMessages() {
+	public static void getSentDirectMessages() {
 		def messagesList;
 		try {
-			println "Sent messages \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\nSent messages \n" + 
+				AinsiColors.NORMAL;
 			messagesList = twitter.getSentDirectMessages();
 			messagesList.each  {
 				println "${GrittR.humanDate(it.getCreatedAt())} " + 
@@ -50,75 +60,116 @@ public class GrittR {
 			}		
 		} 
 		catch(Exception ex) {
-			println "Unable to get your sent messages ...sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to get your sent messages ...sorry" + 
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static void getFavorites() {
+	public static void getFavorites() {
 		def statusList;
 		try {
 			statusList = twitter.getFavorites();
-			println "Favorite tweets \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\nFavorite tweets \n" + 
+				AinsiColors.NORMAL;
 			displayStatusMessage(statusList);		
 		} 
 		catch(Exception ex) {
-			println "Unable to get your favorite tweets ...sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to get your favorite tweets ...sorry" +
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static void getFollowers() {
+	public static void getFollowers() {
 		def userList;
 		try {
-			println "Followers \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\nFollowers \n" +
+				AinsiColors.NORMAL;
 			userList = twitter.getFollowers(twitter.getUserId());
 			userList.each  {
 				println "${ it.getScreenName() }";
 			}
 		} 
 		catch(Exception ex) {
-			println "Unable to list your followers ... sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to list your followers ... sorry" +
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static void getFriendsTimeline() {
+	public static void getFriendsTimeline() {
 		def statusList;
 		try {
 			statusList = twitter.getFriendsTimeline();
-			println "Friends timeline \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\nFriends timeline \n" + 
+				AinsiColors.NORMAL;
 			displayStatusMessage(statusList);
 			
 		}
 		catch(Exception ex) {
-			println "Unable to list your friend's timeline ... sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to list your friend's timeline ... sorry" + 
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static getMentions() {
+	public static getMentions() {
 		def statusList;
 		try {
 			statusList = twitter.getMentions();
-			println "@${twitter.getUserId()} \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT + 
+				"\n@${twitter.getUserId()} \n" + 
+				AinsiColors.NORMAL;
 			displayStatusMessage(statusList);
 		}
 		catch(Exception ex) {
-			println "Unable to list your mentions timeline ... sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to list your mentions timeline ... sorry" + 
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
-	static void getUserTimeline() {
+	static void getPublicTimeline() {
 		def statusList;
 		try {
-			println "Your timeline \n";
+			println AinsiColors.MAJENTA_ON_DEFAULT +  
+				"\nPublic timeline \n" + 
+				AinsiColors.NORMAL;
+			statusList = twitter.getPublicTimeline();
+			displayStatusMessage(statusList);
+		}
+		catch(Exception ex) {
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to list public timeline ... sorry" +
+				AinsiColors.NORMAL;
+				
+			ex.printStackTrace();
+		}
+		finally { System.exit(0); }
+	}
+	
+	public static void getUserTimeline() {
+		def statusList;
+		try {
+			println AinsiColors.MAJENTA_ON_DEFAULT +  
+				"\nYour timeline \n" + 
+				AinsiColors.NORMAL;
 			statusList = twitter.getUserTimeline(twitter.getUserId(), new Date());
 			displayStatusMessage(statusList);
 		}
 		catch(Exception ex) {
-			println "Unable to list your user timeline ... sorry";
+			println AinsiColors.RED_ON_DEFAULT + 
+				"Unable to list your user timeline ... sorry" + 
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
@@ -130,18 +181,54 @@ public class GrittR {
 		def status;
 		try {
 			status = twitter.updateStatus(newStatus);
-			println "Successfully updated your status to : ${status.getText()}" + 
-				"- [ID: ${status.getId()}]";
+			println AinsiColors.CYAN_ON_DEFAULT +  
+				"\nSuccessfully updated your status to : ${status.getText()}" + 
+				" - [ID: ${status.getId()}]" + 
+				AinsiColors.NORMAL;
 		}
 		catch(Exception ex) {
-			println "Unable to update your status... sorry";
+			println AinsiColors.RED_ON_DEFAULT +  
+				"Unable to update your status... sorry" +
+				AinsiColors.NORMAL;
 		}
 		finally { System.exit(0); }
 	}
 	
 	/**************************************************************************/
 	
-	static void authorizeClient() {
+	public static void authenticateUser() {
+		if(arguments.length < 1) {
+			println AinsiColors.RED_ON_DEFAULT + 
+				"You must supply your USERNAME and " + 
+				"PASSWORD for the method : ${method}" +
+				AinsiColors.NORMAL;
+			System.exit(1);
+		}
+		
+		def username = arguments[0];
+		def password = arguments[1];
+		
+		println "Logging in as ${username} [(${password})]";
+		
+		/* twitter.setUserId(username);
+		twitter.setPassword(password); */
+		
+		try {
+			twitter = new Twitter(username, password);
+			user = twitter.verifyCredentials();
+			println "Logged in as : ${user.getScreenName()}";
+		} 
+		catch(Exception ex) {
+			println AinsiColors.RED_ON_DEFAULT + 
+				"Unable to verify your twitter credentials ...sorry" +
+				AinsiColors.NORMAL;
+			System.exit(1);
+		}
+	}
+	
+	// TODO : implement oauth support...
+	/*
+	public static void authorizeClient() {
 		twitter.setOAuthConsumer("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
     	RequestToken requestToken = twitter.getOAuthRequestToken();
     	AccessToken accessToken = null;
@@ -159,7 +246,8 @@ public class GrittR {
       		} 
       		catch (TwitterException te) {
         		if( 401 == te.getStatusCode()) {
-          			println "Unable to get the access token.";
+          			println "Unable to get the access token." + 
+          				AinsiColors.NORMAL;
        			}
        			else {
           			te.printStackTrace();
@@ -174,14 +262,14 @@ public class GrittR {
     		storeAccessToken(twitter.verifyCredentials().getId() , accessToken);
     	}
     	else {
+    		// twitter.setOAuthAccessToken(at.getToken(), at.getTokenSecret());
+    		// accessToken = loadAccessToken(user.getId());
+        	twitter.setOAuthAccessToken(at);	
     		println "GrittR is authorized...";
-    		twitter.setOAuthAccessToken(at.getToken(), at.getTokenSecret());
-    		//
-    		twitter.getOAuthRequestToken(at.getToken(), at.getTokenSecret());
     	}
   	}
   	
-  	static void storeAccessToken(int userId, AccessToken at) {
+  	public static void storeAccessToken(int userId, AccessToken at) {
     	def db, sb, stmt;
     	try {
     		db = new Database();
@@ -199,7 +287,8 @@ public class GrittR {
 				while(stmt.step()) { }
 			}
 			catch(Exception ex) {
-				println "Error creating tokens table ...sorry";
+				println "Error creating tokens table ...sorry" + 
+					AinsiColors.NORMAL;
 			}
 
 			sb = new StringBuffer();
@@ -211,24 +300,22 @@ public class GrittR {
 			sb.append(", ");
 			sb.append("'" + at.getTokenSecret() + "'");
 			sb.append(")");
-			
-			println sb.toString();   
-			
 			try {
     			stmt = db.prepare(sb.toString());
 				while(stmt.step()) { }
 			}
 			catch(Exception ex) {
-				println "Error storing your access token ...sorry";
+				println "Error storing your access token ...sorry" + 
+					AinsiColors.NORMAL;
 			}
     	}
     	catch(Exception ex) {
-    		println "Unable to store access token ...sorry";
+    		println "Unable to store access token ...sorry" +
+    			AinsiColors.NORMAL;
     	}
   	}
-  	
-  	static AccessToken loadAccessToken(int userId) {
-
+  	 
+  	public static AccessToken loadAccessToken(int userId) {
     	def db, sb, stmt;
     	AccessToken accessToken = null;
     	String token, tokenSecret = null;
@@ -241,7 +328,6 @@ public class GrittR {
     		sb.append("select * from tokens where userid = ");
     		sb.append("'" + userId.toString() + "'");
     		
-
     		try {
     			stmt = db.prepare(sb.toString());
     			while(stmt.step()) { 
@@ -257,139 +343,187 @@ public class GrittR {
     			accessToken = new AccessToken(token, tokenSecret);
     		}
     		catch(Exception ex) {
-    			println "Error while retreiving your access token ...sorry";
+    			println "Error while retreiving your access token ...sorry" +
+    				AinsiColors.NORMAL;
     		}
     		
     	}
     	catch(Exception ex) {
-    		println "Unable to retreive access token ...sorry";
+    		println "Unable to retreive access token ...sorry" +
+    			AinsiColors.NORMAL;
     	}
     	return accessToken;
   	}
+  	*/
 
 	/**************************************************************************/	
 	
-	static void displayStatusMessage(List<Status> statusList) { 
+	public static void displayStatusMessage(List<Status> statusList) { 
     	statusList.each {
-    		println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${it.getUser().getScreenName()} [ID: ${it.getId()}]" + 
-					"\n${it.getText()}\n";
+    		println "${AinsiColors.CYAN_ON_DEFAULT}" + 
+    				"${GrittR.humanDate(it.getCreatedAt())} " + 
+    				"${AinsiColors.GREEN_ON_DEFAULT} " + 
+					"${it.getUser().getScreenName()} " +
+					"${AinsiColors.MAJENTA_ON_DEFAULT} "  + 
+					"[ID: ${it.getId()}]" + 
+					"${AinsiColors.BLUE_ON_DEFAULT} " + 
+					"\n${it.getText()}\n" +
+					"${AinsiColors.NORMAL} ";
     	}    	
     }
 		
-	static String helpString() {
+	public static String helpString() {
 		StringBuffer sb = new StringBuffer();
+		sb.append(AinsiColors.GREEN_ON_DEFAULT);
 		sb.append("\n");
 		sb.append(GrittR.VERSION);
 		sb.append("\n");
-		sb.append("At least 3 arguments must be specified\n");
-		sb.append("groovy GrittR username password method [(opt) arguments]\n\n");
+		sb.append("groovy grittr method [(opt) arguments]\n\n");
 		sb.append("Example usage :\n");
-		sb.append("groovy GrittR username password direct\n");
-		sb.append("groovy GrittR username password favorites\n");
-		sb.append("groovy GrittR username password followers\n");
-		sb.append("groovy GrittR username password friends\n");
-		sb.append("groovy GrittR username password mentions\n");
-		sb.append("groovy GrittR username password sent\n");
-		sb.append("groovy GrittR username password update 'your new status'\n");
+		sb.append("groovy grittr about \n");
+		sb.append("groovy grittr public \n");
+		sb.append("groovy grittr direct USERNAME PASSWORD \n");
+		sb.append("groovy grittr favorites USERNAME PASSWORD \n");
+		sb.append("groovy grittr followers USERNAME PASSWORD \n");
+		sb.append("groovy grittr friends USERNAME PASSWORD \n");
+		sb.append("groovy grittr mentions USERNAME PASSWORD \n");
+		sb.append("groovy grittr sent USERNAME PASSWORD \n");
+		sb.append("groovy grittr update USERNAME PASSWORD 'your new status' \n");
+		sb.append("groovy grittr user USERNAME PASSWORD \n");
+		sb.append(AinsiColors.NORMAL);
+		
        return sb.toString();
 	}
 	
-	static String humanDate(date) {
-		return new SimpleDateFormat("yy/MM/dd").format(date);
-	}
-
-	/**************************************************************************/
-    static void main(String[] args) {
-
-        if(args.length < 3) {
-        	println GrittR.helpString();
-        	System.exit(0);
-        }
-        
-        def username, password, method, arguments, argumentString;
-        
-        username = args[0];
-        password = args[1];
-        
-        twitter = new Twitter(username, password);
-        twitter.setClientURL("http://github.com/julien/grittr/tree/master");
-		twitter.setClientVersion("1.0");
-		twitter.setUserAgent("GrittR");
-
-        try {
-        	user = twitter.verifyCredentials();
-        	accessToken = loadAccessToken(user.getId());
-        	if(accessToken != null) {
-        		twitter.setOAuthAccessToken(accessToken);
-        		twitter.setSource("GrittR");  	
-        	}
+	
+	public static String parseMethod(String method) {
+		// some methods need "authentication", others dont
+		switch(method) {
+        	case "about":
+        		printAbout();
+        		break;
         	
-        } 
-        catch(Exception ex) {
-        	println "Failed to log in to twitter, check your credentials";
-        	System.exit(0);
-        }
-        
-        method = args[2]
-        arguments = new String[args.length - 3];
-        System.arraycopy(args, 3, arguments, 0, args.length - 3);
-        argumentString = arguments.join(" ");
-        
-        // println "method : ${method}, args : ${argumentString}";  
-        
-        switch(method) {
-        	case "authorize":
-        		authorizeClient();
+        	case "public":
+        		getPublicTimeline();
         		break;
         
+        	/*
+        	case "authorize":
+        		authenticateUser();
+        		authorizeClient();
+        		break;
+        	*/
+        	
         	case "direct":
+        		authenticateUser();
         		getDirectMessages();
         		break;
         		
         	case "favorites":
+        		authenticateUser();
         		getFavorites();
         		break;
   
         	case "followers":
+        		authenticateUser();
         		getFollowers();
         		break;
         	
         	case "friends":
+        		authenticateUser();
         		getFriendsTimeline();
         		break;
         		
         	case "mentions":
+        		authenticateUser();
         		getMentions();
         		break;
         		
         	case "sent":
+        		authenticateUser();
         		getSentDirectMessages();
         		break;
         
         	case "update":
-        		updateStatus(argumentString);
+        		authenticateUser();
+        		updateStatus(argStr);
         		break;
         		
         	case "user":
+        		authenticateUser();
         		getUserTimeline();
         		break;
         		
         	default:
         		println GrittR.helpString();
         		break;
+    	}
+	}
+	
+	public static String humanDate(date) {
+		return new SimpleDateFormat("yy/MM/dd").format(date);
+	}
+	
+	public static void printAbout() {
+		println AinsiColors.GREEN_ON_DEFAULT + 
+		    "url : ${twitter.getClientURL()}\n" +
+        	"version : ${twitter.getClientVersion()}\n" +
+        	"source : ${twitter.getSource()}\n" +
+        	"user agent : ${twitter.getUserAgent()}" +
+        	AinsiColors.NORMAL;
+	}
+	
+	
+	/**************************************************************************/
+    public static void main(String[] args) {
+		
+		if(args.length > 0) {
+			method = args[0];
+			
+    		arguments = new String[args.length - 1];
+    		
+    		System.arraycopy(args, 1, arguments, 0, args.length - 1);
+    		
+        	argStr = arguments.join(" ");
+        	
+        	twitter = new Twitter(); 
+        	twitter.setClientURL("http://github.com/julien/grittr/tree/master");
+			twitter.setClientVersion("1.0");
+			twitter.setSource("GrittR");  	
+			twitter.setUserAgent("GrittR");
+        	
+			parseMethod(method);
+			// println "${AinsiColors.GREEN_ON_DEFAULT}" + 
+			// "method : ${method}, args : ${argStr}${AinsiColors.NORMAL}"; 
+        } 
+        else {
+        	println GrittR.helpString();
+        	System.exit(1);        	
         }
+		
+		// TODO : implement oauth support... 
+        // accessToken = loadAccessToken(user.getId());
+        // if(accessToken != null) 
+        // 	twitter.setOAuthAccessToken(accessToken); 
     }
     
     /**************************************************************************/
-    
-
 }
 
 
-
-
-
-
+/* a simple utility class to print 
+  out "colored" messages in the console" */
+class AinsiColors {
+    public static String NORMAL =  "\u001b[0m";
+	public static String REVERSE = "\u001b[7m";
+	// colors on "default" console background
+	public static String BLUE_ON_DEFAULT =    "\u001b[34;49m";
+	public static String CYAN_ON_DEFAULT =    "\u001b[36;49m";
+	public static String GREEN_ON_DEFAULT =   "\u001b[32;49m";
+	public static String MAJENTA_ON_DEFAULT = "\u001b[35;49m";
+	public static String RED_ON_DEFAULT =     "\u001b[31;49m";
+	public static String YELLOW_ON_DEFAULT =  "\u001b[36;49m";
+    public static String WHITE_ON_DEFAULT =   "\u001b[37;49m";
+}
 
 
