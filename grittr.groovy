@@ -19,6 +19,8 @@ public class GrittR {
 	private static ExtendedUser user;
 	private static AccessToken accessToken;
 	private static String method;
+	private static String username;
+	private static String password;
 	private static String[] arguments;
 	private static String argStr;
 	
@@ -36,7 +38,7 @@ public class GrittR {
 				AinsiColors.NORMAL;
 			messagesList.each  {
 				println "${GrittR.humanDate(it.getCreatedAt())} " + 
-					"${ it.getSender().getScreenName() } \n${it.getText()} \n";
+					"${it.getSender().getScreenName()} \n${it.getText()} \n";
 			}		
 		} 
 		catch(Exception ex) {
@@ -196,27 +198,33 @@ public class GrittR {
 	
 	/**************************************************************************/
 	
-	public static void authenticateUser() {
-		if(arguments.length < 1) {
+	public static void authenticateUser(String username, String password) {
+		if(username == null || password == null) {
 			println AinsiColors.RED_ON_DEFAULT + 
 				"You must supply your USERNAME and " + 
 				"PASSWORD for the method : ${method}" +
 				AinsiColors.NORMAL;
 			System.exit(1);
 		}
-		
-		def username = arguments[0];
-		def password = arguments[1];
-		
-		println "Logging in as ${username} [(${password})]";
-		
-		/* twitter.setUserId(username);
-		twitter.setPassword(password); */
+		 		
+		println "Logging in as ${username}";
 		
 		try {
 			twitter = new Twitter(username, password);
+			
 			user = twitter.verifyCredentials();
-			println "Logged in as : ${user.getScreenName()}";
+			println "Logged in as ${user.getScreenName()}";
+			
+			try {
+				AccessToken at = loadAccessToken(user.getId());
+				if(at != null)
+					twitter.setOAuthAccessToken(at);
+					
+				customizeClient(twitter);
+			} 
+			catch (Exception ex) {
+				ex.printStackTrace();
+			}				
 		} 
 		catch(Exception ex) {
 			println AinsiColors.RED_ON_DEFAULT + 
@@ -227,7 +235,7 @@ public class GrittR {
 	}
 	
 	// TODO : implement oauth support...
-	/*
+	
 	public static void authorizeClient() {
 		twitter.setOAuthConsumer("JDy3FSsqzDpBYS9Xtvp1AA", "AftY58IPpEctiiIQpFaDuDuGKJHDbmnZGiyqrA12E"); 
     	RequestToken requestToken = twitter.getOAuthRequestToken();
@@ -354,7 +362,7 @@ public class GrittR {
     	}
     	return accessToken;
   	}
-  	*/
+  	
 
 	/**************************************************************************/	
 	
@@ -406,51 +414,49 @@ public class GrittR {
         	case "public":
         		getPublicTimeline();
         		break;
-        
-        	/*
+                	
         	case "authorize":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		authorizeClient();
         		break;
-        	*/
-        	
+        	        	
         	case "direct":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getDirectMessages();
         		break;
         		
         	case "favorites":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getFavorites();
         		break;
   
         	case "followers":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getFollowers();
         		break;
         	
         	case "friends":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getFriendsTimeline();
         		break;
         		
         	case "mentions":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getMentions();
         		break;
         		
         	case "sent":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getSentDirectMessages();
         		break;
         
         	case "update":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		updateStatus(argStr);
         		break;
         		
         	case "user":
-        		authenticateUser();
+        		authenticateUser(username, password);
         		getUserTimeline();
         		break;
         		
@@ -462,6 +468,13 @@ public class GrittR {
 	
 	public static String humanDate(date) {
 		return new SimpleDateFormat("yy/MM/dd").format(date);
+	}
+	
+	public static void customizeClient(Twitter twitter) {
+		twitter.setClientURL("http://github.com/julien/grittr/tree/master");
+		twitter.setClientVersion("1.0");
+		twitter.setSource("grittr");  	
+		twitter.setUserAgent("grittr");
 	}
 	
 	public static void printAbout() {
@@ -480,18 +493,26 @@ public class GrittR {
 		if(args.length > 0) {
 			method = args[0];
 			
-    		arguments = new String[args.length - 1];
-    		
-    		System.arraycopy(args, 1, arguments, 0, args.length - 1);
-    		
-        	argStr = arguments.join(" ");
+			if (args.length > 1) 
+				username = args[1];
+			else
+			 	username = "";
+			
+			if(args.length > 2) 
+				password = args[2];
+			else
+				password = null;
+				
+			
+    		if(args.length > 3) {
+    			arguments = new String[args.length - 3];
+    			System.arraycopy(args, 3, arguments, 0, args.length - 3);
+        		argStr = arguments.join(" ");
+        	}
         	
         	twitter = new Twitter(); 
-        	twitter.setClientURL("http://github.com/julien/grittr/tree/master");
-			twitter.setClientVersion("1.0");
-			twitter.setSource("GrittR");  	
-			twitter.setUserAgent("GrittR");
-        	
+        	customizeClient(twitter);
+        	        	
 			parseMethod(method);
 			// println "${AinsiColors.GREEN_ON_DEFAULT}" + 
 			// "method : ${method}, args : ${argStr}${AinsiColors.NORMAL}"; 
